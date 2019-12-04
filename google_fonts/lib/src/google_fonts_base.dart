@@ -81,6 +81,18 @@ Future<void> loadFontIfNecessary(GoogleFontsDescriptor descriptor) async {
   // If this font has already been loaded, then there is no need to load it
   // again.
   if (_loadedFonts.contains(familyWithVariant)) {
+    print(
+        'loadFontIfNecessary skipped because $familyWithVariant is already loaded');
+    return;
+  }
+
+  // If this font can be loaded by the pre-bundled assets, then there is no
+  // need to load it at all.
+  final fontManifestJson = await _loadFontManifestJson();
+  print('fontManifestJson: $fontManifestJson');
+  if (_isFamilyWithVariantInFontManifest(familyWithVariant, fontManifestJson)) {
+    print(
+        'loadFontIfNecessary skipped because $familyWithVariant is in the fonts manifest');
     return;
   }
 
@@ -89,14 +101,16 @@ Future<void> loadFontIfNecessary(GoogleFontsDescriptor descriptor) async {
 
   Future<ByteData> byteData;
   if (!kIsWeb) {
-    byteData = _readLocalFont(familyWithVariant);
+    byteData = _loadFontFromDeviceFileSystem(familyWithVariant);
   }
   final localFontFound = byteData != null && await byteData != null;
   if (!localFontFound) {
-    byteData = _httpFetchFont(familyWithVariant, descriptor.fontUrl);
+    byteData =
+        _httpFetchFontAndSaveToDevice(familyWithVariant, descriptor.fontUrl);
   }
   fontLoader.addFont(byteData);
   await fontLoader.load();
+  print('loadFontIfNecessary loaded $familyWithVariant');
   // TODO: Remove this once it is done automatically after loading a font.
   // https://github.com/flutter/flutter/issues/44460
   PaintingBinding.instance.handleSystemMessage({'type': 'fontsChange'});
@@ -128,7 +142,8 @@ GoogleFontsVariant _closestMatch(
 /// it is the first time it is being loaded.
 ///
 /// This function can return null if the font fails to load from the URL.
-Future<ByteData> _httpFetchFont(String fontName, String fontUrl) async {
+Future<ByteData> _httpFetchFontAndSaveToDevice(
+    String fontName, String fontUrl) async {
   final uri = Uri.tryParse(fontUrl);
   if (uri == null) {
     throw Exception('Invalid fontUrl: $fontUrl');
@@ -136,7 +151,7 @@ Future<ByteData> _httpFetchFont(String fontName, String fontUrl) async {
 
   final response = await httpClient.get(uri);
   if (response.statusCode == 200) {
-    _writeLocalFont(fontName, response.bodyBytes);
+    _saveFontToDeviceFileSystem(fontName, response.bodyBytes);
     return ByteData.view(response.bodyBytes.buffer);
   } else {
     // If that call was not successful, throw an error.
@@ -154,12 +169,12 @@ Future<File> _localFile(String name) async {
   return File('$path/$name.ttf');
 }
 
-Future<File> _writeLocalFont(String name, List<int> bytes) async {
+Future<File> _saveFontToDeviceFileSystem(String name, List<int> bytes) async {
   final file = await _localFile(name);
   return file.writeAsBytes(bytes);
 }
 
-Future<ByteData> _readLocalFont(String name) async {
+Future<ByteData> _loadFontFromDeviceFileSystem(String name) async {
   try {
     final file = await _localFile(name);
     final fileExists = file.existsSync();
@@ -187,4 +202,30 @@ int _computeMatch(GoogleFontsVariant a, GoogleFontsVariant b) {
     score += 2;
   }
   return score;
+}
+
+Future<List<dynamic>> _loadFontManifestJson() async {
+  return rootBundle.loadStructuredData('FontManifest.json', (jsonString) async {
+    print('jsonString: $jsonString');
+    return json.decode(jsonString);
+  });
+}
+
+bool _isFamilyWithVariantInFontManifest(
+    String familyWithVariant, dynamic fontsJson) {
+  final fontNameParts = familyWithVariant.split('_');
+  final fontFamily = fontNameParts[0];
+  final variantString = fontNameParts[1];
+  final variant = GoogleFontsVariant.fromString(variantString);
+
+  for (final fontJson in fontsJson) {
+    if (fontJson['family'] == fontFamily) {
+      for (final fontJson in fontJson['fonts']) {
+        if (variant == GoogleFontsVariant.fromFontJson(fontJson)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }

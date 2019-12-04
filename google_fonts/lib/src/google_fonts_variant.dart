@@ -19,6 +19,12 @@ class GoogleFontsVariant {
             ? FontStyle.italic
             : FontStyle.normal;
 
+  GoogleFontsVariant.fromFontJson(Map<String, dynamic> fontJson)
+      : this.fontWeight = FontWeight.values[
+  (fontJson['weight'] == null ? 400 : fontJson['weight']) ~/ 100 - 1],
+        this.fontStyle =
+            fontJson['style'] == null ? FontStyle.normal : FontStyle.italic;
+
   final FontWeight fontWeight;
   final FontStyle fontStyle;
 

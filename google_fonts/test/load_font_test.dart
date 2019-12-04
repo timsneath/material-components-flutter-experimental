@@ -34,7 +34,7 @@ main() {
     clearCache();
   });
 
-  testWidgets('loadFont method calls http get', (tester) async {
+  testWidgets('loadFontIfNecessary method calls http get', (tester) async {
     final fakeUrl = Uri.http('fonts.google.com', '/foo');
     final fakeDescriptor = GoogleFontsDescriptor(
       fontFamily: 'foo',
@@ -49,7 +49,7 @@ main() {
   });
 
   testWidgets(
-      'loadFont method does not make http get request on subsequent '
+      'loadFontIfNecessary method does not make http get request on subsequent '
       'calls', (tester) async {
     final fakeUrl = Uri.http('fonts.google.com', '/foo');
     final fakeDescriptor = GoogleFontsDescriptor(
@@ -72,7 +72,7 @@ main() {
     verifyNever(httpClient.get(fakeUrl));
   });
 
-  testWidgets('loadFont method writes font file', (tester) async {
+  testWidgets('loadFontIfNecessary method writes font file', (tester) async {
     final fakeUrl = Uri.http('fonts.google.com', '/foo');
     final fakeDescriptor = GoogleFontsDescriptor(
       fontFamily: 'foo',
@@ -92,5 +92,17 @@ main() {
       directoryContents.listSync().single.toString().contains('foo'),
       isTrue,
     );
+  });
+
+  testWidgets(
+      'loadFontIfNecessary method does nothing if font is already on the '
+      'filesystem', (tester) async {
+    // TODO(clocksmith)
+  });
+
+  testWidgets(
+      'loadFontIfNecessary method does nothing if font in the '
+      'FontManifest.json', (tester) async {
+    // TODO(clocksmith)
   });
 }
