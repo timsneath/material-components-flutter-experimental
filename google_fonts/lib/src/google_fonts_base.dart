@@ -88,7 +88,13 @@ Future<void> loadFontIfNecessary(GoogleFontsDescriptor descriptor) async {
 
   // If this font can be loaded by the pre-bundled assets, then there is no
   // need to load it at all.
-  final fontManifestJson = await _loadFontManifestJson();
+  var fontManifestJson;
+  try {
+    fontManifestJson = await _loadFontManifestJson();
+  } catch (e) {
+    print('Caught error: ' + e.toString());
+  }
+
   print('fontManifestJson: $fontManifestJson');
   if (_isFamilyWithVariantInFontManifest(familyWithVariant, fontManifestJson)) {
     print(
@@ -204,15 +210,22 @@ int _computeMatch(GoogleFontsVariant a, GoogleFontsVariant b) {
   return score;
 }
 
-Future<List<dynamic>> _loadFontManifestJson() async {
+Future<List<Map<String, dynamic>>> _loadFontManifestJson() async {
+  print('_loadFontManifestJson');
   return rootBundle.loadStructuredData('FontManifest.json', (jsonString) async {
     print('jsonString: $jsonString');
-    return json.decode(jsonString);
+    return json.decode(jsonString) as List<Map<String, dynamic>>;
   });
 }
 
 bool _isFamilyWithVariantInFontManifest(
     String familyWithVariant, dynamic fontsJson) {
+  if (fontsJson == null) {
+    return false;
+  }
+
+  // TODO(clocksmith): Make a class for familyWithVariant to centralize
+  // serialization/deserialization?
   final fontNameParts = familyWithVariant.split('_');
   final fontFamily = fontNameParts[0];
   final variantString = fontNameParts[1];

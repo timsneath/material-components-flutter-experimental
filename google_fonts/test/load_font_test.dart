@@ -35,9 +35,9 @@ main() {
   });
 
   testWidgets('loadFontIfNecessary method calls http get', (tester) async {
-    final fakeUrl = Uri.http('fonts.google.com', '/foo');
+    final fakeUrl = Uri.http('fonts.google.com', '/Foo');
     final fakeDescriptor = GoogleFontsDescriptor(
-      fontFamily: 'foo',
+      fontFamily: 'Foo',
       fontWeight: FontWeight.w400,
       fontStyle: FontStyle.normal,
       fontUrl: fakeUrl.toString(),
@@ -50,10 +50,10 @@ main() {
 
   testWidgets(
       'loadFontIfNecessary method does not make http get request on subsequent '
-      'calls', (tester) async {
-    final fakeUrl = Uri.http('fonts.google.com', '/foo');
+      'calls (after the font has already loaded)', (tester) async {
+    final fakeUrl = Uri.http('fonts.google.com', '/Foo');
     final fakeDescriptor = GoogleFontsDescriptor(
-      fontFamily: 'foo',
+      fontFamily: 'Foo',
       fontWeight: FontWeight.w400,
       fontStyle: FontStyle.normal,
       fontUrl: fakeUrl.toString(),
@@ -73,9 +73,9 @@ main() {
   });
 
   testWidgets('loadFontIfNecessary method writes font file', (tester) async {
-    final fakeUrl = Uri.http('fonts.google.com', '/foo');
+    final fakeUrl = Uri.http('fonts.google.com', '/Foo');
     final fakeDescriptor = GoogleFontsDescriptor(
-      fontFamily: 'foo',
+      fontFamily: 'Foo',
       fontWeight: FontWeight.w400,
       fontStyle: FontStyle.normal,
       fontUrl: fakeUrl.toString(),
@@ -89,20 +89,46 @@ main() {
 
     expect(directoryContents.listSync().isNotEmpty, isTrue);
     expect(
-      directoryContents.listSync().single.toString().contains('foo'),
+      directoryContents.listSync().single.toString().contains('Foo'),
       isTrue,
     );
   });
 
   testWidgets(
-      'loadFontIfNecessary method does nothing if font is already on the '
+      'loadFontIfNecessary method does nothing if the font is already on the '
       'filesystem', (tester) async {
-    // TODO(clocksmith)
+    // TODO(clocksmith): Finish this.
+
+    final fakeUrl = Uri.http('fonts.google.com', '/Foo');
+    final fakeDescriptor = GoogleFontsDescriptor(
+      fontFamily: 'Foo',
+      fontWeight: FontWeight.w400,
+      fontStyle: FontStyle.normal,
+      fontUrl: fakeUrl.toString(),
+    );
+
+    // Mock out reading the ttf from the filesystem
+
+    // Call loadFontIfNeccessary and verify no http request happens
   });
 
   testWidgets(
-      'loadFontIfNecessary method does nothing if font in the '
+      'loadFontIfNecessary method does nothing if the font is in the '
       'FontManifest.json', (tester) async {
-    // TODO(clocksmith)
+    // TODO(clocksmith): Finish this.
+
+    final fakeUrl = Uri.http('fonts.google.com', '/Foo');
+    final fakeDescriptor = GoogleFontsDescriptor(
+      fontFamily: 'Foo',
+      fontWeight: FontWeight.w400,
+      fontStyle: FontStyle.normal,
+      fontUrl: fakeUrl.toString(),
+    );
+
+    // Mock reading the FontManifest.json to return a fontJson with foo
+
+    // Call loadFontIfNeccessary and verify no http request happens
   });
+
+  // TODO(clocksmith): Add a test for running without FontManifest.json
 }
